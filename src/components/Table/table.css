@@ -1,0 +1,4 @@
+.mobile-column {
+  display: flex;
+  flex-direction: column;
+}
