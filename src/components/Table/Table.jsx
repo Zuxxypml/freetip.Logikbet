@@ -22,7 +22,7 @@ const Table = () => {
   }, []);
   return (
     <div className="container text-center mx-auto lg:w-4/5">
-      <h1 className="text-center font-bold text-2xl mb-5">Today's Tips</h1>
+      <h1 className="text-center font-bold text-3xl mb-5">Today's Tips</h1>
       <table className="w-full table-auto border border-collapse">
         <thead>
           <tr className="h-12">
