@@ -3,6 +3,9 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 
 const Table = () => {
+  const [tableData, setTableData] = useState([]);
+  const [isFetching, setIsFetching] = useState(true);
+
   function determineBackgroundColor(percentage) {
     if (percentage >= 50) {
       return "green";
@@ -12,29 +15,62 @@ const Table = () => {
       return "red";
     }
   }
+  function checkMatch(predictionTip, result) {
+    if (!result) {
+      return true; // Unplayed match
+    }
 
-  const [tableData, setTableData] = useState([]);
-  const [isFetching, setIsFetching] = useState(true);
+    const [homeScore, awayScore] = result.split("-");
+    if (predictionTip === "1" && homeScore > awayScore) {
+      return true;
+    } else if (predictionTip === "2" && homeScore < awayScore) {
+      return true;
+    } else if (
+      predictionTip === "1x" &&
+      (homeScore > awayScore || homeScore === awayScore)
+    ) {
+      return true;
+    } else if (
+      predictionTip === "x2" &&
+      (homeScore < awayScore || homeScore === awayScore)
+    ) {
+      return true;
+    } else if (predictionTip === "x" && homeScore === awayScore) {
+      return true;
+    } else if (predictionTip === "12" && homeScore !== awayScore) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   useEffect(() => {
     axios.get("https://logi.onrender.com/today").then((response) => {
       console.log(response.data);
-      const filteredTableData = response?.data?.tableData.filter((row) => {
+      let filteredTableData = response?.data?.tableData.filter((row) => {
+        return checkMatch(
+          row.predictionTip.toLowerCase(),
+          row.result?.toLowerCase()
+        );
+      });
+      filteredTableData = filteredTableData.filter((row) => {
         return row.outcomePredictions.some((prediction) => {
           const [, percentage] = prediction.split(":");
           const formattedPercentage = parseFloat(percentage.trim());
           return formattedPercentage > 55;
         });
       });
+      console.log(filteredTableData);
       setTableData(filteredTableData);
       setIsFetching(false);
     });
   }, []);
+
   return (
     <>
       {isFetching ? (
-        <div className=" h-screen flex items-center justify-center">
-          <CircularProgress className="" color="inherit" />
+        <div className="h-screen flex items-center justify-center">
+          <CircularProgress color="inherit" />
         </div>
       ) : (
         <div className="container text-center mx-auto lg:w-4/5 min-h-screen">
@@ -57,19 +93,20 @@ const Table = () => {
                   <tr key={index} className="text-center py-4 h-16 my-2">
                     <td className="border text-center px-4">{row.date}</td>
                     <td className="border text-center">{row.match}</td>
-                    <td className=" h-full p-2 border flex flex-col items-center gap-2 justify-center md:flex-row md:justify-center md:items-center md:gap-1">
+                    <td className="h-full p-2 border flex flex-col items-center gap-2 justify-center md:flex-row md:justify-center md:items-center md:gap-1">
                       {row?.outcomePredictions?.map((prediction, index) => {
                         const [number, percentage] = prediction.split(":");
                         const formattedPercentage = percentage;
 
-                        console.log(formattedPercentage);
                         const bgColor =
                           determineBackgroundColor(formattedPercentage);
+
                         return (
-                          <div className=" h-full flex flex-col items-center justify-center md:flex-row md:justify-center md:items-center md:gap-1 text-center">
-                            {" "}
+                          <div
+                            key={index}
+                            className="h-full flex flex-col items-center justify-center md:flex-row md:justify-center md:items-center md:gap-1 text-center"
+                          >
                             <span
-                              key={index}
                               className="percentage-badge p-1 h-full"
                               style={{ backgroundColor: bgColor }}
                             >
@@ -79,6 +116,7 @@ const Table = () => {
                         );
                       })}
                     </td>
+
                     <td className="border text-center">{row.predictionTip}</td>
                     <td className="border text-center">{row.result}</td>
                   </tr>
