@@ -1,5 +1,6 @@
 import CircularProgress from "@mui/material/CircularProgress";
 import axios from "axios";
+import moment from "moment";
 import React, { useEffect, useState } from "react";
 
 const Table = () => {
@@ -15,12 +16,14 @@ const Table = () => {
       return "red";
     }
   }
-  function checkMatch(predictionTip, result) {
-    if (!result) {
-      return true; // Unplayed match
+
+  function checkMatch(predictionTip, result, matchTime) {
+    if (!result && !moment(matchTime, "MM/DD/YYYY, HH:mm").isBefore(moment())) {
+      return true; // Played match with no result
     }
 
-    const [homeScore, awayScore] = result.split("-");
+    const [homeScore = 0, awayScore = 0] = result ? result.split(":") : [];
+
     if (predictionTip === "1" && homeScore > awayScore) {
       return true;
     } else if (predictionTip === "2" && homeScore < awayScore) {
@@ -50,7 +53,8 @@ const Table = () => {
       let filteredTableData = response?.data?.tableData.filter((row) => {
         return checkMatch(
           row.predictionTip.toLowerCase(),
-          row.result?.toLowerCase()
+          row.result?.toLowerCase(),
+          row.date
         );
       });
       filteredTableData = filteredTableData.filter((row) => {
