@@ -16,34 +16,34 @@ const Table = () => {
       return "red";
     }
   }
-
   function checkMatch(predictionTip, result, matchTime) {
     if (!result && !moment(matchTime, "MM/DD/YYYY, HH:mm").isBefore(moment())) {
-      return true; // Played match with no result
+      return "⏳"; // Pending match
     }
-
     const [homeScore = 0, awayScore = 0] = result ? result.split(":") : [];
 
     if (predictionTip === "1" && homeScore > awayScore) {
-      return true;
+      return "✅"; // Won prediction
     } else if (predictionTip === "2" && homeScore < awayScore) {
-      return true;
+      return "✅"; // Won prediction
     } else if (
       predictionTip === "1x" &&
       (homeScore > awayScore || homeScore === awayScore)
     ) {
-      return true;
+      return "✅"; // Won prediction
     } else if (
       predictionTip === "x2" &&
       (homeScore < awayScore || homeScore === awayScore)
     ) {
-      return true;
+      return "✅"; // Won prediction
     } else if (predictionTip === "x" && homeScore === awayScore) {
-      return true;
+      return "✅"; // Won prediction
     } else if (predictionTip === "12" && homeScore !== awayScore) {
-      return true;
+      return "✅"; // Won prediction
+    } else if (predictionTip.includes("'")) {
+      return "⏳"; // Pending match
     } else {
-      return false;
+      return "❌"; // Lost prediction
     }
   }
 
@@ -64,8 +64,31 @@ const Table = () => {
           return formattedPercentage > 55;
         });
       });
-      console.log(filteredTableData);
-      setTableData(filteredTableData);
+      const sortedTableData = filteredTableData.sort((a, b) => {
+        const aMatchStatus = checkMatch(
+          a.predictionTip.toLowerCase(),
+          a.result?.toLowerCase(),
+          a.date
+        );
+        const bMatchStatus = checkMatch(
+          b.predictionTip.toLowerCase(),
+          b.result?.toLowerCase(),
+          b.date
+        );
+
+        if (aMatchStatus === "✅" && bMatchStatus !== "✅") {
+          return -1; // Move `a` to the beginning
+        } else if (aMatchStatus !== "✅" && bMatchStatus === "✅") {
+          return 1; // Move `a` to the end
+        } else if (aMatchStatus === "⏳" && bMatchStatus !== "⏳") {
+          return -1; // Move `a` to the beginning
+        } else if (aMatchStatus !== "⏳" && bMatchStatus === "⏳") {
+          return 1; // Move `a` to the end
+        } else {
+          return 0; // Preserve the relative order
+        }
+      });
+      setTableData(sortedTableData);
       setIsFetching(false);
     });
   }, []);
@@ -90,6 +113,7 @@ const Table = () => {
                   </th>
                   <th className="border text-center p-2">Prediction Tip</th>
                   <th className="border text-center p-2">Result</th>
+                  <th className="border text-center p-2">Status</th>
                 </tr>
               </thead>
               <tbody className="p-5">
@@ -123,6 +147,13 @@ const Table = () => {
 
                     <td className="border text-center">{row.predictionTip}</td>
                     <td className="border text-center">{row.result}</td>
+                    <td className="border text-center">
+                      {checkMatch(
+                        row.predictionTip.toLowerCase(),
+                        row.result?.toLowerCase(),
+                        row.date
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
