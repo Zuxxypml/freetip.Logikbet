@@ -23,7 +23,7 @@ const Table = () => {
   useEffect(() => {
     // Fetch data from your backend API
     axios
-      .get("http://localhost:8080/today") // Update with your backend URL
+      .get("https://logi.onrender.com/today") // Update with your backend URL
       .then((response) => {
         const tableDataFromBackend = response.data.scrapedData;
         // Process and sort data here as needed
