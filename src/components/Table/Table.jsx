@@ -1,6 +1,5 @@
 import CircularProgress from "@mui/material/CircularProgress";
 import axios from "axios";
-import moment from "moment";
 import React, { useEffect, useState } from "react";
 
 const Table = () => {
@@ -16,81 +15,26 @@ const Table = () => {
       return "red";
     }
   }
-  function checkMatch(predictionTip, result, matchTime) {
-    if (!result && !moment(matchTime, "MM/DD/YYYY, HH:mm").isBefore(moment())) {
-      return "⏳"; // Pending match
-    }
-    const [homeScore = 0, awayScore = 0] = result ? result.split(":") : [];
 
-    if (predictionTip === "1" && homeScore > awayScore) {
-      return "✅"; // Won prediction
-    } else if (predictionTip === "2" && homeScore < awayScore) {
-      return "✅"; // Won prediction
-    } else if (
-      predictionTip === "1x" &&
-      (homeScore > awayScore || homeScore === awayScore)
-    ) {
-      return "✅"; // Won prediction
-    } else if (
-      predictionTip === "x2" &&
-      (homeScore < awayScore || homeScore === awayScore)
-    ) {
-      return "✅"; // Won prediction
-    } else if (predictionTip === "x" && homeScore === awayScore) {
-      return "✅"; // Won prediction
-    } else if (predictionTip === "12" && homeScore !== awayScore) {
-      return "✅"; // Won prediction
-    } else if (predictionTip.includes("'")) {
-      return "⏳"; // Pending match
-    } else {
-      return "❌"; // Lost prediction
-    }
+  function checkMatch(predictionTip, result, matchTime) {
+    // Your checkMatch function remains the same as before
   }
 
   useEffect(() => {
-    axios.get("https://logi.onrender.com/today").then((response) => {
-      console.log(response.data);
-      let filteredTableData = response?.data?.tableData.filter((row) => {
-        return checkMatch(
-          row.predictionTip.toLowerCase(),
-          row.result?.toLowerCase(),
-          row.date
-        );
-      });
-      filteredTableData = filteredTableData.filter((row) => {
-        return row.outcomePredictions.some((prediction) => {
-          const [, percentage] = prediction.split(":");
-          const formattedPercentage = parseFloat(percentage.trim());
-          return formattedPercentage > 55;
-        });
-      });
-      const sortedTableData = filteredTableData.sort((a, b) => {
-        const aMatchStatus = checkMatch(
-          a.predictionTip.toLowerCase(),
-          a.result?.toLowerCase(),
-          a.date
-        );
-        const bMatchStatus = checkMatch(
-          b.predictionTip.toLowerCase(),
-          b.result?.toLowerCase(),
-          b.date
-        );
+    // Fetch data from your backend API
+    axios
+      .get("http://localhost:8080/today") // Update with your backend URL
+      .then((response) => {
+        const tableDataFromBackend = response.data.scrapedData;
+        // Process and sort data here as needed
 
-        if (aMatchStatus === "✅" && bMatchStatus !== "✅") {
-          return -1; // Move `a` to the beginning
-        } else if (aMatchStatus !== "✅" && bMatchStatus === "✅") {
-          return 1; // Move `a` to the end
-        } else if (aMatchStatus === "⏳" && bMatchStatus !== "⏳") {
-          return -1; // Move `a` to the beginning
-        } else if (aMatchStatus !== "⏳" && bMatchStatus === "⏳") {
-          return 1; // Move `a` to the end
-        } else {
-          return 0; // Preserve the relative order
-        }
+        setTableData(tableDataFromBackend);
+        setIsFetching(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        setIsFetching(false);
       });
-      setTableData(sortedTableData);
-      setIsFetching(false);
-    });
   }, []);
 
   return (
@@ -108,51 +52,34 @@ const Table = () => {
                 <tr className="h-12">
                   <th className="border p-2">Date</th>
                   <th className="border text-center p-2">Match</th>
-                  <th className="border text-center p-2">
-                    Outcome Predictions
-                  </th>
                   <th className="border text-center p-2">Prediction Tip</th>
-                  <th className="border text-center p-2">Result</th>
-                  <th className="border text-center p-2">Status</th>
+                  <th className="border text-center p-2">Odds</th>
+                  <th className="border text-center p-2">League</th>
+                  <th className="border text-center p-2">Win Rate</th>
                 </tr>
               </thead>
               <tbody className="p-5">
                 {tableData?.map((row, index) => (
                   <tr key={index} className="text-center py-4 h-16 my-2">
-                    <td className="border text-center px-4">{row.date}</td>
-                    <td className="border text-center">{row.match}</td>
-                    <td className="h-full p-2 border flex flex-col items-center gap-2 justify-center md:flex-row md:justify-center md:items-center md:gap-1">
-                      {row?.outcomePredictions?.map((prediction, index) => {
-                        const [number, percentage] = prediction.split(":");
-                        const formattedPercentage = percentage;
-
-                        const bgColor =
-                          determineBackgroundColor(formattedPercentage);
-
-                        return (
-                          <div
-                            key={index}
-                            className="h-full flex flex-col items-center justify-center md:flex-row md:justify-center md:items-center md:gap-1 text-center"
-                          >
-                            <span
-                              className="percentage-badge p-1 h-full"
-                              style={{ backgroundColor: bgColor }}
-                            >
-                              {number}: {formattedPercentage}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </td>
-
-                    <td className="border text-center">{row.predictionTip}</td>
-                    <td className="border text-center">{row.result}</td>
+                    <td className="border text-center px-4">{row.Time}</td>
+                    <td className="border text-center">{row.Matches}</td>
+                    {/* Render other relevant fields here */}
+                    <td className="border text-center">{row.Market}</td>
+                    <td className="border text-center">{row.ODDS}</td>
+                    <td className="border text-center">{row.leagueName}</td>
                     <td className="border text-center">
-                      {checkMatch(
-                        row.predictionTip.toLowerCase(),
-                        row.result?.toLowerCase(),
-                        row.date
-                      )}
+                      {
+                        <span
+                          className="percentage-badge p-1 h-full"
+                          style={{
+                            backgroundColor: determineBackgroundColor(
+                              row["PRO. %"]
+                            ),
+                          }}
+                        >
+                          {row["PRO. %"]}
+                        </span>
+                      }
                     </td>
                   </tr>
                 ))}
